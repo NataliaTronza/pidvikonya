@@ -64,20 +64,23 @@ label.f span{display:block;font-size:13px;color:var(--ink2);margin-bottom:5px}
 @keyframes blobPulse{0%,100%{transform:scale(1) translateY(0)}50%{transform:scale(1.09) translateY(-4px)}}
 
 .rise{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;border-radius:inherit}
-.rise i{position:absolute;bottom:-18px;border-radius:50%;background:#ffffff29;animation:riseUp linear infinite;display:block}
-.rise.light i{background:#56820322}
-.rise i:nth-child(1){left:6%;width:9px;height:9px;animation-duration:7.5s;animation-delay:0s}
-.rise i:nth-child(2){left:19%;width:15px;height:15px;animation-duration:9.4s;animation-delay:1.6s}
-.rise i:nth-child(3){left:34%;width:7px;height:7px;animation-duration:6.6s;animation-delay:.5s}
-.rise i:nth-child(4){left:50%;width:12px;height:12px;animation-duration:8.6s;animation-delay:2.4s}
-.rise i:nth-child(5){left:65%;width:8px;height:8px;animation-duration:7.1s;animation-delay:3.3s}
-.rise i:nth-child(6){left:79%;width:14px;height:14px;animation-duration:10.2s;animation-delay:.9s}
-.rise i:nth-child(7){left:91%;width:6px;height:6px;animation-duration:6.9s;animation-delay:2s}
+.rise i{position:absolute;bottom:-34px;display:block;
+  background:url('bubble.png') center/contain no-repeat;
+  animation:riseUp linear infinite}
+.rise.light i{opacity:.85}
+.rise i:nth-child(1){left:5%;width:20px;height:20px;animation-duration:8.5s;animation-delay:0s}
+.rise i:nth-child(2){left:18%;width:30px;height:30px;animation-duration:11s;animation-delay:1.6s}
+.rise i:nth-child(3){left:33%;width:15px;height:15px;animation-duration:7.4s;animation-delay:.5s}
+.rise i:nth-child(4){left:49%;width:26px;height:26px;animation-duration:9.8s;animation-delay:2.4s}
+.rise i:nth-child(5){left:64%;width:17px;height:17px;animation-duration:8s;animation-delay:3.3s}
+.rise i:nth-child(6){left:78%;width:28px;height:28px;animation-duration:12s;animation-delay:.9s}
+.rise i:nth-child(7){left:90%;width:13px;height:13px;animation-duration:7.8s;animation-delay:2s}
 @keyframes riseUp{
-  0%{transform:translateY(0) translateX(0);opacity:0}
-  12%{opacity:.9}
-  88%{opacity:.4}
-  100%{transform:translateY(-176px) translateX(7px);opacity:0}
+  0%{transform:translateY(0) translateX(0) scale(.85);opacity:0}
+  14%{opacity:1}
+  45%{transform:translateY(-90px) translateX(-9px) scale(1)}
+  85%{opacity:.65}
+  100%{transform:translateY(-200px) translateX(10px) scale(1.05);opacity:0}
 }
 .hero-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;position:relative;z-index:1}
 .hero-title{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-weight:800;letter-spacing:-.02em;font-size:25px;line-height:1.12;color:var(--pist)}
