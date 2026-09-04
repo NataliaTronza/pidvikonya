@@ -196,6 +196,9 @@ ul.tips li::marker{color:var(--pist-d)}
 .masc-pop{width:170px;margin:0 auto 16px}
 .masc-ach{width:76px;align-self:center;margin:0 2px 0 0}
 .bubbles{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:2px 0 18px}
+.bubzone{position:relative;overflow:hidden;padding:14px 0 2px;margin-bottom:4px}
+.bubzone .bubbles{position:relative;z-index:1;margin:0 0 10px}
+.bubzone .rise i{--riseH:150px}
 .bub{border-radius:999px;padding:9px 18px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1;
   animation:bubFloat 2.8s ease-in-out infinite}
 .bub:nth-child(1){background:var(--pist);color:var(--choc);--br:-5deg;animation-delay:0s}
@@ -460,7 +463,7 @@ prob:[["М'яка жовта основа листка","Перелив, поч�
 "use strict";
 
 /* ======== сховище ======== */
-const APP_VER="v21";
+const APP_VER="v23";
 const DBN="pidvikonnia";
 let idb=null,noIDB=false;
 function openDB(){return new Promise((res,rej)=>{let r;try{r=indexedDB.open(DBN,1);}catch(e){return rej(e);}
@@ -732,6 +735,8 @@ function bubblesHTML(kind){
   for(let i=0;i<3&&pool.length;i++) w.push(pool.splice(Math.floor(rnd()*pool.length),1)[0]);
   return `<div class="bubbles">${w.map(x=>`<span class="bub">${esc(x)}</span>`).join("")}</div>`;
 }
+/* смужка реплік разом із мильними бульбашками позаду */
+const bubbleZone=kind=>`<div class="bubzone">${riseBubbles(true)}${bubblesHTML(kind)}</div>`;
 
 /* число, яке накручується від попереднього значення */
 const PREVN=new Map();
@@ -868,7 +873,7 @@ function viewToday(){
   </div>`;
 
   if(S.plants.length&&tasks.length){
-    h+=bubblesHTML(overdueList().length?"late":"todo");
+    h+=bubbleZone(overdueList().length?"late":"todo");
   }
 
   if(!S.plants.length){
@@ -881,10 +886,13 @@ function viewToday(){
       <button class="btn line wide" data-act="go" data-n="add">Обрати самій</button>
       </div></div>`;
   } else if(!tasks.length){
-    h+=`<div class="card"><div class="masc-big">${FACE}</div>
+    h+=`<div class="card" style="position:relative;overflow:hidden">${riseBubbles(true)}
+      <div style="position:relative;z-index:1">
+      <div class="masc-big">${FACE}</div>
       ${bubblesHTML("done")}
       <div class="empty" style="padding-top:0"><b>Сьогодні все зроблено.</b><br>
-      Найближча справа — через ${days(Math.min(...S.plants.map(p=>dueIn(p,"water")).filter(x=>x!==null&&x>0).concat([99])))}.</div></div>`;
+      Найближча справа — через ${days(Math.min(...S.plants.map(p=>dueIn(p,"water")).filter(x=>x!==null&&x>0).concat([99])))}.</div>
+      </div></div>`;
   } else {
     h+=`<div class="h-sec">Справи на сьогодні · ${tasks.length}</div>`;
     const dueWater=tasks.filter(t=>t.type==="water");
@@ -1496,7 +1504,17 @@ document.getElementById("importInput").addEventListener("change",e=>{
   await loadState();
   checkAch(); touchStreak(); save();
   render();
-  if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("sw.js").then(reg=>{
+      reg.update().catch(()=>{});                       // перевірити оновлення одразу
+      setInterval(()=>reg.update().catch(()=>{}),60*60*1000);
+    }).catch(()=>{});
+    // коли нова версія стала активною — один раз перезавантажитись
+    let reloaded=false;
+    navigator.serviceWorker.addEventListener("controllerchange",()=>{
+      if(reloaded)return; reloaded=true; location.reload();
+    });
+  }
 })();
 </script>
 </body>
