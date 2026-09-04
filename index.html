@@ -64,10 +64,13 @@ label.f span{display:block;font-size:13px;color:var(--ink2);margin-bottom:5px}
 @keyframes blobPulse{0%,100%{transform:scale(1) translateY(0)}50%{transform:scale(1.09) translateY(-4px)}}
 
 .rise{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;border-radius:inherit}
-.rise i{position:absolute;bottom:-34px;display:block;
+.rise i{position:absolute;bottom:-34px;display:block;--riseH:240px;
   background:url('bubble.png') center/contain no-repeat;
   animation:riseUp linear infinite}
 .rise.light i{opacity:.85}
+.card.dark .rise i{--riseH:250px}
+.card .rise.light i{--riseH:340px}
+.pop .rise i{--riseH:660px}
 .rise i:nth-child(1){left:5%;width:20px;height:20px;animation-duration:8.5s;animation-delay:0s}
 .rise i:nth-child(2){left:18%;width:30px;height:30px;animation-duration:11s;animation-delay:1.6s}
 .rise i:nth-child(3){left:33%;width:15px;height:15px;animation-duration:7.4s;animation-delay:.5s}
@@ -78,9 +81,9 @@ label.f span{display:block;font-size:13px;color:var(--ink2);margin-bottom:5px}
 @keyframes riseUp{
   0%{transform:translateY(0) translateX(0) scale(.85);opacity:0}
   14%{opacity:1}
-  45%{transform:translateY(-90px) translateX(-9px) scale(1)}
-  85%{opacity:.65}
-  100%{transform:translateY(-200px) translateX(10px) scale(1.05);opacity:0}
+  45%{transform:translateY(calc(var(--riseH) * -.45)) translateX(-9px) scale(1)}
+  85%{opacity:.7}
+  100%{transform:translateY(calc(var(--riseH) * -1)) translateX(10px) scale(1.05);opacity:0}
 }
 .hero-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;position:relative;z-index:1}
 .hero-title{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-weight:800;letter-spacing:-.02em;font-size:25px;line-height:1.12;color:var(--pist)}
@@ -176,6 +179,7 @@ ul.tips li::marker{color:var(--pist-d)}
 
 .pop{position:fixed;inset:0;background:#24330ae0;z-index:60;display:grid;place-items:center;padding:24px}
 .pop .box{background:var(--choc);color:#f7f6dc;border-radius:30px;padding:28px 24px;text-align:center;max-width:340px;width:100%;position:relative;overflow:hidden}
+.pop .box .muted{color:#d5e3a8}
 .pop .big{display:grid;place-items:center;margin-bottom:14px;color:var(--pist)}
 .pop h2{font-size:25px;margin-bottom:8px;color:var(--pist)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(106px + env(safe-area-inset-bottom));background:var(--choc);color:var(--pist);
@@ -191,9 +195,12 @@ ul.tips li::marker{color:var(--pist-d)}
 .masc-big{width:158px;margin:0 auto 16px}
 .masc-pop{width:170px;margin:0 auto 16px}
 .masc-ach{width:76px;align-self:center;margin:0 2px 0 0}
-.bubbles{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:0 0 18px}
-.bub{border-radius:999px;padding:9px 18px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1;
+.bubbles{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:2px 0 18px}
+.bub{border-radius:22px;padding:9px 16px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1;
+  text-align:center;
   animation:bubFloat 2.8s ease-in-out infinite}
+.bub i{display:block;font-style:normal;font-size:10.5px;font-weight:600;letter-spacing:0;opacity:.72;margin-top:4px;max-width:96px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bub:nth-child(1){background:var(--pist);color:var(--choc);--br:-5deg;animation-delay:0s}
 .bub:nth-child(2){background:var(--clay);color:#2f4a02;--br:3deg;animation-delay:.35s}
 .bub:nth-child(3){background:var(--choc);color:var(--pist);--br:-2deg;animation-delay:.7s}
@@ -708,6 +715,53 @@ const PALS=[
 const FACE=`<img class="masc" src="mascot.png" alt="" onerror="this.style.display='none'">`;
 const riseBubbles=(light)=>`<div class="rise${light?" light":""}">${"<i></i>".repeat(7)}</div>`;
 
+/* репліки самих рослин — набір залежить від стану, трійка міняється щодня */
+const BUB_POOL={
+  late:["SOS!","де ти?","я чекаю!","ну серйозно?","забула про мене?","алло!","хелп!",
+        "ой!","швидше","ау!","рятуй","пити"],
+  todo:["я тут!","не забудь!","пссс!","хей!","є хвилинка?","є дільце","не проґав","ну коли вже?",
+        "полий","агов!","привіт","ну ж бо"],
+  done:["супер!","чудово!","полегшало","оце добре","саме те","як добре","люблю тебе","ти найкраща",
+        "яка турбота!","дякую, садівнице","оце я розумію","життя прекрасне","можна жити","я щаслива",
+        "все чудово","дякую","ням","кайф"],
+  empty:["привіт","агов!","почнемо?","гей","я б тут пожила"]
+};
+function pickLine(pool,seed){
+  let s=(seed>>>0)%2147483647||1;
+  s=(s*48271)%2147483647;
+  return pool[Math.floor(s/2147483647*pool.length)];
+}
+/* хто саме говорить: беремо найтерміновіші рослини, у кожної свій голос */
+function speakers(kind,tasks){
+  const day=Math.floor(Date.now()/864e5);
+  let list=[];
+  if(kind==="late"||kind==="todo"){
+    const seen=new Set();
+    for(const t of tasks){
+      if(seen.has(t.p.id))continue;
+      seen.add(t.p.id); list.push(t.p);
+    }
+  } else {
+    list=[...S.plants].sort((a,b)=>hash(a.id+day)-hash(b.id+day));
+  }
+  return list.slice(0,3);
+}
+function bubblesHTML(kind,tasks){
+  const pool=BUB_POOL[kind]||BUB_POOL.todo;
+  const day=Math.floor(Date.now()/864e5);
+  if(kind==="empty"||!S.plants.length){
+    const p2=pool.slice(); const w=[];
+    let seed=day*2654435761%2147483647;
+    const rnd=()=>{seed=(seed*48271)%2147483647;return seed/2147483647;};
+    for(let i=0;i<3&&p2.length;i++) w.push(p2.splice(Math.floor(rnd()*p2.length),1)[0]);
+    return `<div class="bubbles">${w.map(x=>`<span class="bub">${esc(x)}</span>`).join("")}</div>`;
+  }
+  const who=speakers(kind,tasks||[]);
+  if(!who.length)return "";
+  return `<div class="bubbles">${who.map((p,i)=>
+    `<span class="bub">${esc(pickLine(pool,hash(p.id)+day+i*7))}<i>${esc(p.name)}</i></span>`).join("")}</div>`;
+}
+
 /* число, яке накручується від попереднього значення */
 const PREVN=new Map();
 function countHTML(key,val){
@@ -842,10 +896,14 @@ function viewToday(){
     </div>
   </div>`;
 
+  if(S.plants.length&&tasks.length){
+    h+=bubblesHTML(overdueList().length?"late":"todo",tasks);
+  }
+
   if(!S.plants.length){
     h+=`<div class="card" style="position:relative;overflow:hidden">${riseBubbles(true)}
       <div style="position:relative;z-index:1">
-      <div class="bubbles"><span class="bub">полий</span><span class="bub">рости</span><span class="bub">агов!</span></div>
+      ${bubblesHTML("empty")}
       <div class="masc-big">${FACE}</div>
       <div class="empty" style="padding-top:0">Тут з'являться справи на день, рівні й ачівки. Почнемо з рослин.</div>
       <button class="btn wide" data-act="seed" style="margin-bottom:10px">Додати мої шість рослин</button>
@@ -853,6 +911,7 @@ function viewToday(){
       </div></div>`;
   } else if(!tasks.length){
     h+=`<div class="card"><div class="masc-big">${FACE}</div>
+      ${bubblesHTML("done")}
       <div class="empty" style="padding-top:0"><b>Сьогодні все зроблено.</b><br>
       Найближча справа — через ${days(Math.min(...S.plants.map(p=>dueIn(p,"water")).filter(x=>x!==null&&x>0).concat([99])))}.</div></div>`;
   } else {
@@ -1091,6 +1150,7 @@ function viewForm(){
   const p=editing||{name:b?b.n:"",species:b?b.n:"",room:"",since:today(),iv:{}};
   const ivw=(p.iv&&p.iv.w)||(b?b.w:DEFAULT_IV.w);
   const ivf=(p.iv&&p.iv.f)||(b?b.f:DEFAULT_IV.f);
+  const ivm=editing?baseIv(editing,"mist"):(b&&b.m?[b.m>=3?2:(b.m===2?4:7),b.m>=3?3:(b.m===2?6:10)]:null);
   let h=head(editing?"Налаштування":"Нова рослина",b?b.lat:"",true);
   h+=`<div class="wrap"><div class="card">
     <label class="f"><span>Як називаєш її вдома</span><input id="f_name" value="${esc(p.name)}" placeholder="Монстера на кухні"></label>
@@ -1105,7 +1165,8 @@ function viewForm(){
     <div class="grid2">
       <label class="f"><span>Підживлення влітку</span><input id="f_fs" type="number" min="0" max="120" value="${ivf[0]}"></label>
       <label class="f"><span>Фото раз на, днів</span><input id="f_ph" type="number" min="3" max="120" value="${photoEvery(p)}"></label></div>
-    <div class="muted small" style="margin-bottom:14px">0 у підживленні означає «не нагадувати».</div>
+    <label class="f"><span>Обприскування раз на, днів</span><input id="f_ms" type="number" min="0" max="60" value="${ivm?ivm[0]:0}"></label>
+    <div class="muted small" style="margin-bottom:14px">0 означає «не нагадувати». Обприскування люблять не всі: калатеї, папороті й алоказії — так, а сукуленти й кактуси мокнути не мають.</div>
     <button class="btn wide" data-act="savep" data-id="${editing?editing.id:""}" data-k="${editing?(editing.base||""):(route.k||"")}">Зберегти</button>
   </div></div>`;
   return h;
@@ -1263,7 +1324,7 @@ function showPop(){
     <div style="position:relative;z-index:3"><div class="masc-big">${FACE}</div>
     <div class="big">${icon(it.icon,30)}</div>
     <h2>${esc(it.title)}</h2><div class="muted" style="margin-bottom:18px">${esc(it.text)}</div>
-    <button class="btn wide" data-close="1">Клас!</button></div></div>`;
+    <button class="btn pist wide" data-close="1">Клас!</button></div></div>`;
   box.addEventListener("click",e=>{
     if(e.target.closest("[data-close]")||e.target===box){box.remove();popQueue.shift();showPop();}
   });
@@ -1413,7 +1474,8 @@ document.addEventListener("click",async e=>{
     pl.since=g("f_since")||today();
     pl.photoDays=Math.max(3,parseInt(g("f_ph"),10)||14);
     const ws=Math.max(1,parseInt(g("f_ws"),10)||7), ww=Math.max(1,parseInt(g("f_ww"),10)||ws);
-    pl.iv={w:[ws,ww],f:[Math.max(0,parseInt(g("f_fs"),10)||0),0]};
+    const ms=Math.max(0,parseInt(g("f_ms"),10)||0);
+    pl.iv={w:[ws,ww],f:[Math.max(0,parseInt(g("f_fs"),10)||0),0],m:ms?[ms,Math.round(ms*1.5)]:[0,0]};
     const lw=g("f_water");
     if(lw&&lastOf(pl,"water")!==lw)pl.log.push({id:uid(),t:"water",d:lw,note:isNew?"на момент додавання":""});
     if(isNew)S.plants.push(pl);
