@@ -196,11 +196,8 @@ ul.tips li::marker{color:var(--pist-d)}
 .masc-pop{width:170px;margin:0 auto 16px}
 .masc-ach{width:76px;align-self:center;margin:0 2px 0 0}
 .bubbles{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:2px 0 18px}
-.bub{border-radius:22px;padding:9px 16px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1;
-  text-align:center;
+.bub{border-radius:999px;padding:9px 18px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1;
   animation:bubFloat 2.8s ease-in-out infinite}
-.bub i{display:block;font-style:normal;font-size:10.5px;font-weight:600;letter-spacing:0;opacity:.72;margin-top:4px;max-width:96px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bub:nth-child(1){background:var(--pist);color:var(--choc);--br:-5deg;animation-delay:0s}
 .bub:nth-child(2){background:var(--clay);color:#2f4a02;--br:3deg;animation-delay:.35s}
 .bub:nth-child(3){background:var(--choc);color:var(--pist);--br:-2deg;animation-delay:.7s}
@@ -463,6 +460,7 @@ prob:[["М'яка жовта основа листка","Перелив, поч�
 "use strict";
 
 /* ======== сховище ======== */
+const APP_VER="v21";
 const DBN="pidvikonnia";
 let idb=null,noIDB=false;
 function openDB(){return new Promise((res,rej)=>{let r;try{r=indexedDB.open(DBN,1);}catch(e){return rej(e);}
@@ -726,40 +724,13 @@ const BUB_POOL={
         "все чудово","дякую","ням","кайф"],
   empty:["привіт","агов!","почнемо?","гей","я б тут пожила"]
 };
-function pickLine(pool,seed){
-  let s=(seed>>>0)%2147483647||1;
-  s=(s*48271)%2147483647;
-  return pool[Math.floor(s/2147483647*pool.length)];
-}
-/* хто саме говорить: беремо найтерміновіші рослини, у кожної свій голос */
-function speakers(kind,tasks){
-  const day=Math.floor(Date.now()/864e5);
-  let list=[];
-  if(kind==="late"||kind==="todo"){
-    const seen=new Set();
-    for(const t of tasks){
-      if(seen.has(t.p.id))continue;
-      seen.add(t.p.id); list.push(t.p);
-    }
-  } else {
-    list=[...S.plants].sort((a,b)=>hash(a.id+day)-hash(b.id+day));
-  }
-  return list.slice(0,3);
-}
-function bubblesHTML(kind,tasks){
-  const pool=BUB_POOL[kind]||BUB_POOL.todo;
-  const day=Math.floor(Date.now()/864e5);
-  if(kind==="empty"||!S.plants.length){
-    const p2=pool.slice(); const w=[];
-    let seed=day*2654435761%2147483647;
-    const rnd=()=>{seed=(seed*48271)%2147483647;return seed/2147483647;};
-    for(let i=0;i<3&&p2.length;i++) w.push(p2.splice(Math.floor(rnd()*p2.length),1)[0]);
-    return `<div class="bubbles">${w.map(x=>`<span class="bub">${esc(x)}</span>`).join("")}</div>`;
-  }
-  const who=speakers(kind,tasks||[]);
-  if(!who.length)return "";
-  return `<div class="bubbles">${who.map((p,i)=>
-    `<span class="bub">${esc(pickLine(pool,hash(p.id)+day+i*7))}<i>${esc(p.name)}</i></span>`).join("")}</div>`;
+function bubblesHTML(kind){
+  const pool=(BUB_POOL[kind]||BUB_POOL.todo).slice();
+  let seed=Math.floor(Date.now()/864e5)*2654435761%2147483647;
+  const rnd=()=>{seed=(seed*48271)%2147483647;return seed/2147483647;};
+  const w=[];
+  for(let i=0;i<3&&pool.length;i++) w.push(pool.splice(Math.floor(rnd()*pool.length),1)[0]);
+  return `<div class="bubbles">${w.map(x=>`<span class="bub">${esc(x)}</span>`).join("")}</div>`;
 }
 
 /* число, яке накручується від попереднього значення */
@@ -897,7 +868,7 @@ function viewToday(){
   </div>`;
 
   if(S.plants.length&&tasks.length){
-    h+=bubblesHTML(overdueList().length?"late":"todo",tasks);
+    h+=bubblesHTML(overdueList().length?"late":"todo");
   }
 
   if(!S.plants.length){
@@ -1222,7 +1193,8 @@ function viewMore(){
     <div class="muted small" style="margin-bottom:12px">Дані живуть лише на цьому телефоні. У копію потрапляють і рослини, і фото, і прогрес.</div>
     <button class="btn line wide" data-act="export" style="margin-bottom:10px">Зберегти копію у файл</button>
     <button class="btn line wide" data-act="import">Відновити з файлу</button></div>
-  <div class="card"><div class="muted small">Рослин: ${S.plants.length} · поливів: ${countLog("water")} · фото: ${countLog("photo")} · XP: ${gardenXP()}${noIDB?"<br><b>Увага:</b> сховище фото недоступне в цьому браузері.":""}</div></div>
+  <div class="card"><div class="muted small">Рослин: ${S.plants.length} · поливів: ${countLog("water")} · фото: ${countLog("photo")} · XP: ${gardenXP()}${noIDB?"<br><b>Увага:</b> сховище фото недоступне в цьому браузері.":""}
+    <br>Версія ${APP_VER}</div></div>
   </div>`;
   return h;
 }
