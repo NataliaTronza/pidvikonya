@@ -66,7 +66,7 @@ label.f span{display:block;font-size:13px;color:var(--ink2);margin-bottom:5px}
 .rise{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;border-radius:inherit}
 /* суцільний потік через увесь екран: позиції й тривалості задає JS, висота — у пікселях,
    щоб приховування адресного рядка на телефоні не перезапускало анімацію */
-.rise-global{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:15;border-radius:0;--riseH:1000px}
+.rise-global{position:fixed;left:0;right:0;bottom:0;overflow:hidden;pointer-events:none;z-index:15;border-radius:0}
 .rise i{position:absolute;bottom:-34px;display:block;--riseH:240px;
   background:url('bubble.png') center/contain no-repeat;
   animation:riseUp linear infinite}
@@ -83,9 +83,9 @@ label.f span{display:block;font-size:13px;color:var(--ink2);margin-bottom:5px}
 .rise i:nth-child(7){left:90%;width:13px;height:13px;animation-duration:7.8s;animation-delay:2s}
 @keyframes riseUp{
   0%{transform:translateY(0) translateX(0) scale(.85);opacity:0}
-  14%{opacity:1}
+  8%{opacity:1}
   45%{transform:translateY(calc(var(--riseH) * -.45)) translateX(calc(var(--drift, 10px) * -.9)) scale(1)}
-  85%{opacity:.7}
+  93%{opacity:1}
   100%{transform:translateY(calc(var(--riseH) * -1)) translateX(var(--drift, 10px)) scale(1.05);opacity:0}
 }
 .hero-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;position:relative;z-index:1}
@@ -469,7 +469,7 @@ prob:[["М'яка жовта основа листка","Перелив, поч�
 "use strict";
 
 /* ======== сховище ======== */
-const APP_VER="v25";
+const APP_VER="v26";
 const DBN="pidvikonnia";
 let idb=null,noIDB=false;
 function openDB(){return new Promise((res,rej)=>{let r;try{r=indexedDB.open(DBN,1);}catch(e){return rej(e);}
@@ -1506,13 +1506,11 @@ document.getElementById("importInput").addEventListener("change",e=>{
 
 /* ======== старт ======== */
 let riseVH=0;
-function sizeRiseLayer(){
-  const rl=document.getElementById("riseLayer"); if(!rl)return;
-  riseVH=window.innerHeight;
-  rl.style.setProperty("--riseH",(riseVH+150)+"px");
-}
 function fillRiseLayer(){
   const rl=document.getElementById("riseLayer"); if(!rl)return;
+  riseVH=window.innerHeight;
+  const H=riseVH+220;                       // трохи більше за екран, щоб виходили за верхній край
+  rl.style.height=H+"px";                   // висота в пікселях: адресний рядок її не змінює
   const n=14; let html="";
   for(let i=0;i<n;i++){
     const size=11+Math.round(Math.random()*19);
@@ -1521,7 +1519,8 @@ function fillRiseLayer(){
     const left=(i*(100/n)+Math.random()*(100/n)).toFixed(1);
     const drift=Math.round(Math.random()*26-13);
     html+=`<i style="left:${left}%;width:${size}px;height:${size}px;`+
-          `animation-duration:${dur}s;animation-delay:${delay}s;--drift:${drift}px"></i>`;
+          `animation-duration:${dur}s;animation-delay:${delay}s;`+
+          `--drift:${drift}px;--riseH:${H}px"></i>`;
   }
   rl.innerHTML=html;
 }
@@ -1529,11 +1528,11 @@ function fillRiseLayer(){
 (async function(){
   await loadState();
   checkAch(); touchStreak(); save();
-  sizeRiseLayer(); fillRiseLayer();
+  fillRiseLayer();
   // адресний рядок на телефоні змінює висоту на десятки пікселів — це ігноруємо,
-  // перераховуємо лише при справжній зміні (поворот екрана, зміна вікна)
+  // перебудовуємо лише при справжній зміні (поворот екрана, зміна вікна)
   window.addEventListener("resize",()=>{
-    if(Math.abs(window.innerHeight-riseVH)>160) sizeRiseLayer();
+    if(Math.abs(window.innerHeight-riseVH)>160) fillRiseLayer();
   });
   render();
   if("serviceWorker" in navigator){
