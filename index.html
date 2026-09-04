@@ -64,19 +64,9 @@ label.f span{display:block;font-size:13px;color:var(--ink2);margin-bottom:5px}
 @keyframes blobPulse{0%,100%{transform:scale(1) translateY(0)}50%{transform:scale(1.09) translateY(-4px)}}
 
 .rise{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;border-radius:inherit}
-/* суцільний потік через увесь екран: бульбашки проходять і смужку реплік, і зелену картку */
-.rise-global{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:15;border-radius:0}
-.rise-global i{--riseH:112vh;bottom:-40px}
-.rise-global i:nth-child(1){left:4%;width:18px;height:18px;animation-duration:17s;animation-delay:0s}
-.rise-global i:nth-child(2){left:14%;width:28px;height:28px;animation-duration:22s;animation-delay:-6s}
-.rise-global i:nth-child(3){left:26%;width:13px;height:13px;animation-duration:15s;animation-delay:-11s}
-.rise-global i:nth-child(4){left:37%;width:24px;height:24px;animation-duration:19s;animation-delay:-3s}
-.rise-global i:nth-child(5){left:48%;width:16px;height:16px;animation-duration:16s;animation-delay:-14s}
-.rise-global i:nth-child(6){left:59%;width:30px;height:30px;animation-duration:24s;animation-delay:-8s}
-.rise-global i:nth-child(7){left:70%;width:14px;height:14px;animation-duration:15.5s;animation-delay:-18s}
-.rise-global i:nth-child(8){left:80%;width:22px;height:22px;animation-duration:20s;animation-delay:-2s}
-.rise-global i:nth-child(9){left:90%;width:12px;height:12px;animation-duration:14s;animation-delay:-9s}
-.rise-global i:nth-child(10){left:96%;width:26px;height:26px;animation-duration:21s;animation-delay:-16s}
+/* суцільний потік через увесь екран: позиції й тривалості задає JS, висота — у пікселях,
+   щоб приховування адресного рядка на телефоні не перезапускало анімацію */
+.rise-global{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:15;border-radius:0;--riseH:1000px}
 .rise i{position:absolute;bottom:-34px;display:block;--riseH:240px;
   background:url('bubble.png') center/contain no-repeat;
   animation:riseUp linear infinite}
@@ -94,9 +84,9 @@ label.f span{display:block;font-size:13px;color:var(--ink2);margin-bottom:5px}
 @keyframes riseUp{
   0%{transform:translateY(0) translateX(0) scale(.85);opacity:0}
   14%{opacity:1}
-  45%{transform:translateY(calc(var(--riseH) * -.45)) translateX(-9px) scale(1)}
+  45%{transform:translateY(calc(var(--riseH) * -.45)) translateX(calc(var(--drift, 10px) * -.9)) scale(1)}
   85%{opacity:.7}
-  100%{transform:translateY(calc(var(--riseH) * -1)) translateX(10px) scale(1.05);opacity:0}
+  100%{transform:translateY(calc(var(--riseH) * -1)) translateX(var(--drift, 10px)) scale(1.05);opacity:0}
 }
 .hero-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;position:relative;z-index:1}
 .hero-title{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-weight:800;letter-spacing:-.02em;font-size:25px;line-height:1.12;color:var(--pist)}
@@ -479,7 +469,7 @@ prob:[["М'яка жовта основа листка","Перелив, поч�
 "use strict";
 
 /* ======== сховище ======== */
-const APP_VER="v24";
+const APP_VER="v25";
 const DBN="pidvikonnia";
 let idb=null,noIDB=false;
 function openDB(){return new Promise((res,rej)=>{let r;try{r=indexedDB.open(DBN,1);}catch(e){return rej(e);}
@@ -1515,11 +1505,36 @@ document.getElementById("importInput").addEventListener("change",e=>{
 });
 
 /* ======== старт ======== */
+let riseVH=0;
+function sizeRiseLayer(){
+  const rl=document.getElementById("riseLayer"); if(!rl)return;
+  riseVH=window.innerHeight;
+  rl.style.setProperty("--riseH",(riseVH+150)+"px");
+}
+function fillRiseLayer(){
+  const rl=document.getElementById("riseLayer"); if(!rl)return;
+  const n=14; let html="";
+  for(let i=0;i<n;i++){
+    const size=11+Math.round(Math.random()*19);
+    const dur=(8.5+Math.random()*6).toFixed(1);
+    const delay=(-Math.random()*dur).toFixed(1);        // старт у різних точках циклу
+    const left=(i*(100/n)+Math.random()*(100/n)).toFixed(1);
+    const drift=Math.round(Math.random()*26-13);
+    html+=`<i style="left:${left}%;width:${size}px;height:${size}px;`+
+          `animation-duration:${dur}s;animation-delay:${delay}s;--drift:${drift}px"></i>`;
+  }
+  rl.innerHTML=html;
+}
+
 (async function(){
   await loadState();
   checkAch(); touchStreak(); save();
-  const rl=document.getElementById("riseLayer");
-  if(rl) rl.innerHTML="<i></i>".repeat(10);
+  sizeRiseLayer(); fillRiseLayer();
+  // адресний рядок на телефоні змінює висоту на десятки пікселів — це ігноруємо,
+  // перераховуємо лише при справжній зміні (поворот екрана, зміна вікна)
+  window.addEventListener("resize",()=>{
+    if(Math.abs(window.innerHeight-riseVH)>160) sizeRiseLayer();
+  });
   render();
   if("serviceWorker" in navigator){
     navigator.serviceWorker.register("sw.js").then(reg=>{
