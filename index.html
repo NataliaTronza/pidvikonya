@@ -64,6 +64,19 @@ label.f span{display:block;font-size:13px;color:var(--ink2);margin-bottom:5px}
 @keyframes blobPulse{0%,100%{transform:scale(1) translateY(0)}50%{transform:scale(1.09) translateY(-4px)}}
 
 .rise{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;border-radius:inherit}
+/* суцільний потік через увесь екран: бульбашки проходять і смужку реплік, і зелену картку */
+.rise-global{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:15;border-radius:0}
+.rise-global i{--riseH:112vh;bottom:-40px}
+.rise-global i:nth-child(1){left:4%;width:18px;height:18px;animation-duration:17s;animation-delay:0s}
+.rise-global i:nth-child(2){left:14%;width:28px;height:28px;animation-duration:22s;animation-delay:-6s}
+.rise-global i:nth-child(3){left:26%;width:13px;height:13px;animation-duration:15s;animation-delay:-11s}
+.rise-global i:nth-child(4){left:37%;width:24px;height:24px;animation-duration:19s;animation-delay:-3s}
+.rise-global i:nth-child(5){left:48%;width:16px;height:16px;animation-duration:16s;animation-delay:-14s}
+.rise-global i:nth-child(6){left:59%;width:30px;height:30px;animation-duration:24s;animation-delay:-8s}
+.rise-global i:nth-child(7){left:70%;width:14px;height:14px;animation-duration:15.5s;animation-delay:-18s}
+.rise-global i:nth-child(8){left:80%;width:22px;height:22px;animation-duration:20s;animation-delay:-2s}
+.rise-global i:nth-child(9){left:90%;width:12px;height:12px;animation-duration:14s;animation-delay:-9s}
+.rise-global i:nth-child(10){left:96%;width:26px;height:26px;animation-duration:21s;animation-delay:-16s}
 .rise i{position:absolute;bottom:-34px;display:block;--riseH:240px;
   background:url('bubble.png') center/contain no-repeat;
   animation:riseUp linear infinite}
@@ -199,11 +212,13 @@ ul.tips li::marker{color:var(--pist-d)}
 .bubzone{position:relative;overflow:hidden;padding:14px 0 2px;margin-bottom:4px}
 .bubzone .bubbles{position:relative;z-index:1;margin:0 0 10px}
 .bubzone .rise i{--riseH:150px}
-.bub{border-radius:999px;padding:9px 18px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1;
-  animation:bubFloat 2.8s ease-in-out infinite}
-.bub:nth-child(1){background:var(--pist);color:var(--choc);--br:-5deg;animation-delay:0s}
-.bub:nth-child(2){background:var(--clay);color:#2f4a02;--br:3deg;animation-delay:.35s}
-.bub:nth-child(3){background:var(--choc);color:var(--pist);--br:-2deg;animation-delay:.7s}
+.bub{border-radius:999px;padding:10px 19px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1;
+  background-size:220% 220%;box-shadow:0 3px 10px #2f4a0224;
+  animation:bubFloat 2.8s ease-in-out infinite, shimmer 7s linear infinite}
+.bub:nth-child(1){background-image:linear-gradient(115deg,#ff8fb0,#ffc978,#ff8fb0);color:#5a1030;--br:-5deg;animation-delay:0s,0s}
+.bub:nth-child(2){background-image:linear-gradient(115deg,#4f7a02,#9ad12f,#4f7a02);color:#fdffe8;--br:3deg;animation-delay:.35s,-2.3s}
+.bub:nth-child(3){background-image:linear-gradient(115deg,#8b6bf0,#d3a4ff,#8b6bf0);color:#fff;--br:-2deg;animation-delay:.7s,-4.6s}
+@keyframes shimmer{0%{background-position:0% 50%}100%{background-position:200% 50%}}
 @keyframes bubFloat{0%,100%{transform:rotate(var(--br)) translateY(0)}50%{transform:rotate(var(--br)) translateY(-6px)}}
 /* пружинка при натисканні */
 .btn,.chip,.back,.nav .fab,.pcard,.stat .plus,.tabs button{transition:transform .13s cubic-bezier(.34,1.56,.64,1)}
@@ -234,6 +249,7 @@ ul.tips li::marker{color:var(--pist-d)}
 </head>
 <body>
 <div id="app"></div>
+<div class="rise rise-global" id="riseLayer" aria-hidden="true"></div>
 <nav class="nav" id="nav"></nav>
 <div class="toast" id="toast"></div>
 <input type="file" id="photoInput" accept="image/*" style="display:none">
@@ -463,7 +479,7 @@ prob:[["М'яка жовта основа листка","Перелив, поч�
 "use strict";
 
 /* ======== сховище ======== */
-const APP_VER="v23";
+const APP_VER="v24";
 const DBN="pidvikonnia";
 let idb=null,noIDB=false;
 function openDB(){return new Promise((res,rej)=>{let r;try{r=indexedDB.open(DBN,1);}catch(e){return rej(e);}
@@ -736,7 +752,7 @@ function bubblesHTML(kind){
   return `<div class="bubbles">${w.map(x=>`<span class="bub">${esc(x)}</span>`).join("")}</div>`;
 }
 /* смужка реплік разом із мильними бульбашками позаду */
-const bubbleZone=kind=>`<div class="bubzone">${riseBubbles(true)}${bubblesHTML(kind)}</div>`;
+const bubbleZone=kind=>`<div class="bubzone">${bubblesHTML(kind)}</div>`;
 
 /* число, яке накручується від попереднього значення */
 const PREVN=new Map();
@@ -858,7 +874,6 @@ function viewToday(){
   const gm=S.plants.length?(overdueList().length?"sad":(todayTasks().length?"ok":"happy")):"ok";
   h+=`<div class="card dark">
     <div class="blob" style="width:150px;height:150px;background:#ffffff10;right:-46px;top:-56px"></div>
-    ${riseBubbles()}
     <div class="masc-abs hero-m">${FACE}</div>
     <div class="hero-head">
       <div><div class="hero-title">Садівниця,<br>рівень ${g.l}</div>
@@ -877,7 +892,7 @@ function viewToday(){
   }
 
   if(!S.plants.length){
-    h+=`<div class="card" style="position:relative;overflow:hidden">${riseBubbles(true)}
+    h+=`<div class="card" style="position:relative">
       <div style="position:relative;z-index:1">
       ${bubblesHTML("empty")}
       <div class="masc-big">${FACE}</div>
@@ -886,7 +901,7 @@ function viewToday(){
       <button class="btn line wide" data-act="go" data-n="add">Обрати самій</button>
       </div></div>`;
   } else if(!tasks.length){
-    h+=`<div class="card" style="position:relative;overflow:hidden">${riseBubbles(true)}
+    h+=`<div class="card" style="position:relative">
       <div style="position:relative;z-index:1">
       <div class="masc-big">${FACE}</div>
       ${bubblesHTML("done")}
@@ -1503,6 +1518,8 @@ document.getElementById("importInput").addEventListener("change",e=>{
 (async function(){
   await loadState();
   checkAch(); touchStreak(); save();
+  const rl=document.getElementById("riseLayer");
+  if(rl) rl.innerHTML="<i></i>".repeat(10);
   render();
   if("serviceWorker" in navigator){
     navigator.serviceWorker.register("sw.js").then(reg=>{

@@ -1,4 +1,4 @@
-const CACHE = "pidvikonnia-v23";
+const CACHE = "pidvikonnia-v24";
 const FILES = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./mascot.png", "./bubble.png", "./sprout.png", "./nav-today.png", "./nav-plants.png", "./nav-ach.png", "./plant-alocasia.png", "./plant-anthurium.png", "./plant-cactus.png", "./plant-ficus-lyrata.png", "./plant-dracaena-fragrans.png", "./plant-philodendron.png", "./plant-ficus-elastica.png", "./plant-crassula.png", "./plant-sansevieria.png", "./plant-zamioculcas.png", "./plant-monstera.png"];
 
 self.addEventListener("install", e => {
